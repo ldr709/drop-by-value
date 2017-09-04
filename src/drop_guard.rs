@@ -1,5 +1,6 @@
 use super::*;
 
+/// Run a function on drop.
 #[derive(Default, Clone, DropByValue)]
 #[DropByValue(name = "DropGuard", vis = "pub", derive(Default))]
 struct DropGuardImpl<F: FnOnce()>(F);

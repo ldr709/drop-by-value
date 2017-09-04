@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 #[allow(unused_imports)]
 #[macro_use]
 extern crate drop_by_value_derive;
@@ -45,6 +47,7 @@ impl<T: Destructure<R>, R> DerefMut for DropRef<T, R> {
 }
 
 // Do not use this module, as it is not actually public. It has to be pub so macros can use it.
+#[doc(hidden)]
 pub mod internal {
     use super::*;
 

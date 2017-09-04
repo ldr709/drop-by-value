@@ -1,3 +1,5 @@
+#![recursion_limit="128"]
+
 extern crate proc_macro;
 extern crate syn;
 #[macro_use]
@@ -56,6 +58,11 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
         .unwrap_or_else(|| tokens_to_string(&ast.vis))
         .into();
 
+    let rustdoc = ast.attrs
+        .iter()
+        .filter(|x| x.style == AttrStyle::Outer && x.is_sugared_doc)
+        .collect::<Vec<_>>();
+
     let generics = &ast.generics;
     let generics_rhs = Generics {
         lifetimes: generics
@@ -102,6 +109,7 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
         quote! {
 
         #(#[#attrs])*
+        #(#rustdoc)*
         #visibility struct #name#generics
         (#destructure_vis ::drop_by_value::DropByValueWrapper<#inner_name#generics_rhs>)
         #where_clause;
