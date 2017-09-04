@@ -1,0 +1,7 @@
+[package]
+name = "drop_by_value"
+version = "0.1.0"
+authors = ["Lance Roy <ldr709@gmail.com>"]
+
+[dependencies]
+drop-by-value-derive = { path = "drop-by-value-derive", versiom = "0.1.0" }
