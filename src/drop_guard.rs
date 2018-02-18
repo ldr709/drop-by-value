@@ -1,8 +1,8 @@
 use super::*;
 
 /// Run a function on drop.
-#[derive(Default, Clone, DropByValue)]
-#[DropByValue(name = "DropGuard", vis = "pub", derive(Default))]
+#[derive(Clone, DropByValue)]
+#[DropByValue(name = "DropGuard", vis = "pub", derive(Clone))]
 struct DropGuardImpl<F: FnOnce()>(F);
 
 impl<F: FnOnce()> DropValue<DropGuardImpl<F>> for DropGuard<F> {
@@ -12,10 +12,12 @@ impl<F: FnOnce()> DropValue<DropGuardImpl<F>> for DropGuard<F> {
 }
 
 impl<F: FnOnce()> DropGuard<F> {
+    /// Construct from an existing function.
     pub fn new(f: F) -> Self {
-        DropGuard(DropGuardImpl(f).into())
+        DropGuardImpl(f).into()
     }
 
+    /// Extract the function.
     pub fn into_inner(self) -> F {
         destructure!(self).0
     }
@@ -25,13 +27,13 @@ impl<F: FnOnce()> Deref for DropGuard<F> {
     type Target = F;
 
     fn deref(&self) -> &F {
-        &self.0 .0
+        &(self.0).0
     }
 }
 
 impl<F: FnOnce()> DerefMut for DropGuard<F> {
     fn deref_mut(&mut self) -> &mut F {
-        &mut self.0 .0
+        &mut (self.0).0
     }
 }
 

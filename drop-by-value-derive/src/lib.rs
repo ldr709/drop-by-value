@@ -111,7 +111,7 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
         #(#[#attrs])*
         #(#rustdoc)*
         #visibility struct #name#generics
-        (#destructure_vis ::drop_by_value::DropByValueWrapper<#inner_name#generics_rhs>)
+        (#destructure_vis ::std::mem::ManuallyDrop<#inner_name#generics_rhs>)
         #where_clause;
 
         impl#generics ::drop_by_value::internal::Destructure<#inner_name#generics_rhs>
@@ -121,6 +121,14 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
                 let x = unsafe { ::std::ptr::read(self_.0.deref_mut()) };
                 ::std::mem::forget(self_);
                 x
+            }
+        }
+
+        impl#generics ::std::convert::From<#inner_name#generics_rhs>
+            for #name#generics_rhs
+        #where_clause {
+            fn from(inner: #inner_name#generics_rhs) -> Self {
+                #name(::std::mem::ManuallyDrop::new(inner))
             }
         }
 

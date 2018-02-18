@@ -7,10 +7,8 @@ extern crate drop_by_value_derive;
 use std::mem;
 use mem::ManuallyDrop;
 use std::ptr;
-use std::cmp::Ordering;
 use std::ops::Deref;
 use std::ops::DerefMut;
-use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
 #[derive(Debug)]
@@ -79,9 +77,6 @@ pub trait DropValue<Result>: Sized + Destructure<Result> {
     fn drop_value(self_: DropRef<Self, Result>);
 }
 
-mod drop_wrapper;
-pub use drop_wrapper::DropByValueWrapper;
-
 // Allow internal use of macros.
 mod drop_by_value {
     pub use super::*;
@@ -96,7 +91,6 @@ macro_rules! destructure {
         // Make sure we have visibility.
         &x.0;
         ::drop_by_value::internal::make_sure_destructure(&x);
-        ::drop_by_value::internal::make_sure_destructure(&x.0);
 
         ::drop_by_value::internal::Destructure::destructure(x)
     }};
