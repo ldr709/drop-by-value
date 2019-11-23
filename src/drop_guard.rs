@@ -2,7 +2,7 @@ use super::*;
 
 /// Run a function on drop.
 #[derive(Clone, DropByValue)]
-#[DropByValue(name = "DropGuard", vis = "pub", derive(Clone))]
+#[DropAttributes(name = "DropGuard", vis = "pub", derive(Clone))]
 struct DropGuardImpl<F: FnOnce()>(F);
 
 impl<F: FnOnce()> DropValue<DropGuardImpl<F>> for DropGuard<F> {

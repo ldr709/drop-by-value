@@ -10,7 +10,7 @@ use quote::Tokens;
 use quote::ToTokens;
 use syn::*;
 
-#[proc_macro_derive(DropByValue, attributes(DropByValue))]
+#[proc_macro_derive(DropByValue, attributes(DropAttributes))]
 pub fn drop_by_value(input: TokenStream) -> TokenStream {
     let ast = syn::parse_derive_input(&input.to_string()).unwrap();
 
@@ -39,13 +39,13 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
                             panic!("Cannot have multiple visibilities.");
                         }
                     }
-                    _ => panic!("Unrecognized DropByValue attribute argument \"{}\".", key),
+                    _ => panic!("Unrecognized DropAttributes attribute argument \"{}\".", key),
                 }
             }
             NestedMetaItem::MetaItem(ref x) => attrs.push(x),
             ref x => {
                 panic!(
-                    "Unrecognized DropByValue attribute argument \"{}\".",
+                    "Unrecognized DropAttributes attribute argument \"{}\".",
                     tokens_to_string(x)
                 )
             }
@@ -145,16 +145,16 @@ pub fn drop_by_value(input: TokenStream) -> TokenStream {
     output.parse().unwrap()
 }
 
-// Find the DropByValue attribute in the list and return the list of its arguments.
+// Find the DropAttributes attribute in the list and return the list of its arguments.
 fn get_drop_by_value_attr(attrs: &[Attribute]) -> &[NestedMetaItem] {
     let mut attr_iter = attrs.iter().filter(|x| {
         if let MetaItem::List(ref name, _) = x.value {
-            return name == "DropByValue";
+            return name == "DropAttributes";
         }
         false
     });
 
-    let exactly_one_msg = "Drop by value types must exactly one attribute \"DropByValue\".";
+    let exactly_one_msg = "Drop by value types must have exactly one attribute \"DropAttributes\".";
     let attr = attr_iter.next().expect(exactly_one_msg);
     assert!(attr_iter.next() == None, exactly_one_msg);
 
@@ -166,7 +166,7 @@ fn get_drop_by_value_attr(attrs: &[Attribute]) -> &[NestedMetaItem] {
     {
         args
     } else {
-        panic!("Drop by value attribute must be of the form \"#[DropByValue(...)]\".");
+        panic!("Drop by value attribute must be of the form \"#[DropAttributes(...)]\".");
     }
 }
 
