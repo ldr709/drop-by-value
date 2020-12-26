@@ -1,25 +1,29 @@
 use super::*;
 
-/// Run a function on drop.
-#[derive(Clone, DropByValue)]
-#[DropAttributes(name = "DropGuard", vis = "pub", derive(Clone))]
-struct DropGuardImpl<F: FnOnce()>(F);
+drop_move_wrap! {
+    /// Run a [`FnOnce`] function on drop.
+    #[derive(Clone)]
+    pub struct DropGuard<F: FnOnce()>(DropGuardInner {
+        func: F,
+    });
+}
 
-impl<F: FnOnce()> DropValue<DropGuardImpl<F>> for DropGuard<F> {
-    fn drop_value(self_: DropRef<Self, DropGuardImpl<F>>) {
-        (self_.into_inner().0)();
+impl<F: FnOnce()> DropMove for DropGuardInner<F> {
+    fn drop_move(self_: DropHandle<Self>) {
+        (DropHandle::into_inner(self_).func)()
     }
 }
 
 impl<F: FnOnce()> DropGuard<F> {
-    /// Construct from an existing function.
+    /// Construct from a [`FnOnce`] function.
     pub fn new(f: F) -> Self {
-        DropGuardImpl(f).into()
+        DropGuardInner { func: f }.into()
     }
 
     /// Extract the function.
     pub fn into_inner(self) -> F {
-        destructure!(self).0
+        let inner = DropGuardInner::from(self);
+        inner.func
     }
 }
 
@@ -27,13 +31,13 @@ impl<F: FnOnce()> Deref for DropGuard<F> {
     type Target = F;
 
     fn deref(&self) -> &F {
-        &(self.0).0
+        &self.0.func
     }
 }
 
 impl<F: FnOnce()> DerefMut for DropGuard<F> {
     fn deref_mut(&mut self) -> &mut F {
-        &mut (self.0).0
+        &mut self.0.func
     }
 }
 
@@ -43,35 +47,43 @@ impl<F: FnOnce()> From<F> for DropGuard<F> {
     }
 }
 
-#[test]
-fn test_drop() {
-    let mut x: u32 = 0;
-    let z: u32 = 0xdeadbeef;
-    let y = Box::<u32>::new(z);
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    assert!(x != z);
-    {
-        let x_ref = &mut x;
-        let f = move || *x_ref = *y;
-        let guard = DropGuard::new(f);
+    extern crate std;
+    use std::boxed::Box;
 
-        let f = guard.into_inner();
-        DropGuard::new(f);
-    }
-    assert_eq!(x, z);
-}
+    #[test]
+    fn test_drop() {
+        let mut x: u32 = 0;
+        let z: u32 = 0xdeadbeef;
+        let y = Box::<u32>::new(z);
 
-#[test]
-fn test_get() {
-    let mut x: u32 = 0;
+        assert!(x != z);
+        {
+            let x_ref = &mut x;
+            let f = move || *x_ref = *y;
+            let guard = DropGuard::new(f);
 
-    {
-        let mut f = || x += 1;
-        f();
-
-        let mut guard = DropGuard::new(f);
-        guard.deref_mut()();
+            let f = guard.into_inner();
+            DropGuard::new(f);
+        }
+        assert_eq!(x, z);
     }
 
-    assert_eq!(x, 3);
+    #[test]
+    fn test_get() {
+        let mut x: u32 = 0;
+
+        {
+            let mut f = || x += 1;
+            f();
+
+            let mut guard = DropGuard::new(f);
+            guard.deref_mut()();
+        }
+
+        assert_eq!(x, 3);
+    }
 }
