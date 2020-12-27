@@ -1,5 +1,6 @@
 # drop-move
 
+
 This crate allows implementing `Drop` as "pass by move". Here is an example of how this can be
 used to call a `FnOnce` from `drop`.
 
@@ -7,7 +8,7 @@ used to call a `FnOnce` from `drop`.
 use drop_move::{drop_move_wrap, DropMove, DropHandle};
 
 drop_move_wrap! {
-    /// Run a function on drop.
+    /// Runs a function when dropped.
     #[derive(Clone)]
     pub struct DropGuard<F: FnOnce()>(DropGuardInner {
         func: F,
@@ -68,11 +69,11 @@ impl<F: FnOnce()> DropGuard<F> {
 How this works is that `drop_move_wrap!` expands into two structure definitions.
 
 ```rust
-/// Run a function on drop.
+/// Runs a function when dropped.
 #[derive(Clone)]
 pub struct DropGuard<F: FnOnce()>(DropMoveWrapper<DropGuardInner<F>>);
 
-/// Run a function on drop.
+/// Runs a function when dropped.
 #[derive(Clone)]
 struct DropGuardInner<F: FnOnce()> {
     func: F,
@@ -118,14 +119,13 @@ private but the outer is public. The `From` implementations are so that they kno
 back and forth, and also function as convenience methods for creating and destructuring
 `DropGuard`s.
 
-You may be wondering why `drop_move` takes a `DropHandle` rather than passing in the inner
+You may be wondering why `drop_move` takes a `DropHandle` rather than just passing the inner
 structure `DropGuardInner`, which would behave correctly for destructuring and would drop the
-members individually without calling `drop` again when it goes out of scope. However, you wouldn't
-easily be able to call a `&self` or `&mut self` function, which would want an instance of
-`DropGuard` instead. It would require reconstructing the `DropHandle` again so that it can be
-borrowed, then carefully destructuring it after the call to avoid infinite `drop` recursion.
-`DropHandle` allows you to avoid this error prone construction by implementing `Deref` for the
-outer structure.
+members individually. However, you wouldn't easily be able to call a `&self` or `&mut self`
+function, which would want an instance of `DropGuard` instead. It would require reconstructing the
+`DropGuard` again so that it can be borrowed, then carefully destructuring it after the call to
+avoid infinite `drop` recursion. `DropHandle` allows you to avoid this error prone construction
+as it implements `Deref` for the outer structure, so you can call its methods directly.
 
-See `drop_move_wrap!`'s docs for its full supported syntax. See the source for `DropGuard` for the
-full example.
+See `drop_move_wrap!`'s docs for the macro's full supported syntax. See the source for `DropGuard`
+for the full example.

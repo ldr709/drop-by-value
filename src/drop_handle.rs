@@ -1,6 +1,6 @@
 use super::*;
 
-/// A wrapper around [`T::Outer`](DropMoveTypes::Outer) that will drop by converting to `T` and
+/// A wrapper of [`T::Outer`](DropMoveTypes::Outer) that will drop by converting to `T` then
 /// dropping, rather than dropping the `T::Outer`.
 ///
 /// The trouble with making `drop` be pass by move is that the `self` parameter may end up being
@@ -24,10 +24,9 @@ impl<T: DropMoveTypes> DropHandle<T> {
         Self::into_outer(self_).into()
     }
 
-    /// Convert to the outer structure `T::Outer`.
-    ///
-    /// Be careful when using this function. It is easy to end up recursively calling `drop` on the
-    /// output by accident, creating an infinite recursive loop.
+    /// Convert to the outer structure `T::Outer`. Be careful when using this function, as it is
+    /// easy to end up recursively calling `drop` on the output by accident, creating an infinite
+    /// recursive loop.
     ///
     /// This is an associated function so that will not conflict with any methods of `T::Outer`,
     /// which are accessible through [`Deref`].

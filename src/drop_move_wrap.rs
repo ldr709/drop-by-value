@@ -1,6 +1,7 @@
 use super::*;
 
-/// A wrapper around the inner structure `T` that calls `drop_move` when it is dropped.
+/// A wrapper around the inner structure `T` that calls [`drop_move`](DropMove::drop_move) when it
+/// is dropped.
 ///
 /// The inner structure members can be borrowed using the [`Deref`] and [`DerefMut`]
 /// implementations, or be moved with `into_inner`.
