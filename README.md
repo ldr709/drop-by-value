@@ -1,7 +1,7 @@
 # drop-move
 
-This crate allows implementing [`Drop`] as "pass by move". Here is an example of how this can be
-used to call a [`FnOnce`] from [`drop`].
+This crate allows implementing `Drop` as "pass by move". Here is an example of how this can be
+used to call a `FnOnce` from `drop`.
 
 ```rust
 use drop_move::{drop_move_wrap, DropMove, DropHandle};
@@ -35,29 +35,27 @@ let mut x: u32 = 0;
 assert_eq!(x, 1);
 ```
 
-By implementing the [`DropMove`] trait, we were able to have `func` run when the `DropGuard`
-goes out of scope. The usual [`Drop`] trait only allows `drop(&mut self)`, which does not allow
-moving the members of the `DropGuard`, as is required to call a [`FnOnce`]. The reason they do
-not allow `drop(self)` is that it would be too easy to accidentally end up dropping `self`,
-leading to an infinite loop. According to Rust's usual semantics `self` would be dropped at the
-end of the scope, and even if a special case were added for `drop(self)` it could still easily
-happen in a function called by `drop`.
+By implementing the `DropMove` trait, we were able to have `func` run when the `DropGuard` goes
+out of scope. The usual `Drop` trait only allows `drop(&mut self)`, which does not allow moving
+the members of the `DropGuard`, as is required to call a `FnOnce`. The reason they do not allow
+`drop(self)` is that it would be too easy to accidentally end up dropping `self`, leading to an
+infinite loop. According to Rust's usual semantics `self` would be dropped at the end of the scope,
+and even if a special case were added for `drop(self)` it could still easily happen in a function
+called by `drop`.
 
-These problems are mostly avoided by wrapping `self` in a [`DropHandle`], which will only drop
-each member of the structure when it goes out of scope, rather than calling `drop` recursively.
-Semantically, [`drop_move`](DropMove::drop_move) can be thought of as destructuring `DropGuard`.
+These problems are mostly avoided by wrapping `self` in a `DropHandle`, which will only drop each
+member of the structure when it goes out of scope, rather than calling `drop` recursively.
+Semantically, `drop_move` can be thought of as destructuring `DropGuard`.
 Each unmoved member will be dropped when it goes out of scope. These members can be accessed by
-value through [`into_inner`](DropHandle::into_inner). The original `DropGuard` can be obtained
-from [`into_outer`](DropHandle::into_outer), but you must be careful to avoid infinite recursion
-when using this.
+value through `into_inner`. The original `DropGuard` can be obtained from
+`into_outer`, but you must be careful to avoid infinite recursion when
+using this.
 
 Given this destructuring viewpoint, it should be no surprise that `drop_move` also supports
-destructuring, which is normally not allowed for types that implement [`Drop`]. Here, we can
+destructuring, which is normally not allowed for types that implement `Drop`. Here, we can
 convert the `DropGuard` back into the function it contains.
 
 ```rust
-#
-#
 impl<F: FnOnce()> DropGuard<F> {
     /// Extract the function.
     pub fn into_inner(self) -> F {
@@ -67,7 +65,7 @@ impl<F: FnOnce()> DropGuard<F> {
 }
 ```
 
-How this works is that [`drop_move_wrap!`] expands into two structure definitions.
+How this works is that `drop_move_wrap!` expands into two structure definitions.
 
 ```rust
 /// Run a function on drop.
@@ -81,23 +79,20 @@ struct DropGuardInner<F: FnOnce()> {
 };
 ```
 
-The outer structure `DropGuard` provides the public interface, while `DropGuardInner` contains
-the actual members of the `struct`. Neither will implement [`Drop`]. Instead, DropMoveWrapper
-will implement [`Drop`] based on the [`DropMove`] you provide. The structure members can be
-borrowed from a `DropGaurd` using `&self.0.func`, because [`DropMoveWrapper`]
-implements [`Deref`]. They can moved by converting the `DropGaurd` to a `DropGuardInner` with
-[`DropMoveWrapper::into_inner(self.0)`](DropMoveWrapper::into_inner) or
-[`self.into()`](Into::into).
+The outer structure `DropGuard` provides the public interface, while `DropGuardInner` contains the
+actual members of the `struct`. Neither will implement `Drop`. Instead, `DropMoveWrapper` will
+implement `Drop` based on the `DropMove` you provide. The structure members can be borrowed
+from a `DropGaurd` using `&self.0.func`, because `DropMoveWrapper` implements `Deref`. They can
+moved by converting the `DropGaurd` to a `DropGuardInner` with
+`DropMoveWrapper::into_inner(self.0)` or
+`self.into()`.
 
-Notice that the doc comments and attributes have been duplicated for both structures. In fact,
-doc comments are treated as [attributes](https://stackoverflow.com/a/33999625/4071916) by the
-compiler.
+Notice that the doc comments and attributes have been duplicated for both structures. In fact, doc
+comments are treated as [attributes](https://stackoverflow.com/a/33999625/4071916) by the compiler.
 
 The macro also creates a few trait implementations.
 
 ```rust
-#
-#
 impl<F: FnOnce()> From<DropGuard<F>> for DropGuardInner<F> {
     fn from(x: DropGuard<F>) -> Self {
         DropMoveWrapper::into_inner(x.0)
@@ -114,27 +109,23 @@ impl<F: FnOnce()> DropMoveTypes for DropGuardInner<F>
 {
     type Outer = DropGuard<F>;
 }
-#
-#
-#
-#
 ```
 
-The implementation of [`DropMoveTypes`] lets [`DropMoveWrapper`] and [`DropHandle`] know the
+The implementation of `DropMoveTypes` lets `DropMoveWrapper` and `DropHandle` know the
 relationship between `DropGuard` and `DropGuardInner`. It is implemented on the inner structure
 because this will keep the implementation private in the common case that the inner structure is
-private but the outer is public. The [`From`] implementations are so that they know how to
-convert back and forth, and also function as convenience methods for creating and destructuring
+private but the outer is public. The `From` implementations are so that they know how to convert
+back and forth, and also function as convenience methods for creating and destructuring
 `DropGuard`s.
 
-You may be wondering why `drop_move` takes a [`DropHandle`] rather than passing in the inner
+You may be wondering why `drop_move` takes a `DropHandle` rather than passing in the inner
 structure `DropGuardInner`, which would behave correctly for destructuring and would drop the
-members individually without calling `drop` again when it goes out of scope. However, you
-wouldn't easily be able to call a `&self` or `&mut self` function, which would want an instance
-of `DropGuard` instead. It would require reconstructing the [`DropHandle`] again so that it can
-be borrowed, then carefully destructuring it after the call to avoid infinite `drop` recursion.
-[`DropHandle`] allows you to avoid this error prone construction by implementing [`Deref`] for
-the outer structure.
+members individually without calling `drop` again when it goes out of scope. However, you wouldn't
+easily be able to call a `&self` or `&mut self` function, which would want an instance of
+`DropGuard` instead. It would require reconstructing the `DropHandle` again so that it can be
+borrowed, then carefully destructuring it after the call to avoid infinite `drop` recursion.
+`DropHandle` allows you to avoid this error prone construction by implementing `Deref` for the
+outer structure.
 
-See [`drop_move_wrap!`] for its full supported syntax. See the source for [`DropGuard`] for the
+See `drop_move_wrap!`'s docs for its full supported syntax. See the source for `DropGuard` for the
 full example.
