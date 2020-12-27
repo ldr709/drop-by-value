@@ -1,7 +1,12 @@
 [package]
 name = "drop-move"
+description = "A Rust library to support moving out of drop."
 version = "0.1.0"
 authors = ["Lance Roy <ldr709@gmail.com>"]
 edition = "2018"
+license = "MIT"
+keywords = ["drop", "no-std"]
+categories = ["no-std"]
+repository = "https://github.com/ldr709/drop-move"
 
 [dependencies]
